@@ -13,3 +13,5 @@ settings.json
 .coverage
 .flatpak-builder
 /nanovna-saver.exe.spec
+Command Prompt.lnk
+desktop.ini

@@ -154,9 +154,11 @@ class TDRWindow(QtWidgets.QWidget):
         index_peak = np.argmax(self.td)
 
         cable_len = round(self.distance_axis[index_peak]/2, 3)
-        feet = math.floor(cable_len / 0.3048)
+        cable_time = round(time_axis[index_peak]*1e12/2, 1)
+        feet = math.floor(cable_len / 0.3048) # meters/feet
         inches = round(((cable_len / 0.3048) - feet)*12, 1)
 
         self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in)")
+#        self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in) (delay={cable_time}ps)")
         self.app.tdr_result_label.setText(str(cable_len) + " m")
         self.updated.emit()
