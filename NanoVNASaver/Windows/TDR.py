@@ -111,6 +111,7 @@ class TDRWindow(QtWidgets.QWidget):
 
     def updateTDR(self):
         c = 299792458
+        Zo = 50
         # TODO: Let the user select whether to use high or low resolution TDR?
         FFT_POINTS = 2**14
 
@@ -128,7 +129,7 @@ class TDRWindow(QtWidgets.QWidget):
         except ValueError:
             return
 
-        step_size = self.app.data.s11[1].freq - self.app.data.s11[0].freq
+        step_size = self.app.data.s11[2].freq - self.app.data.s11[1].freq
         if step_size == 0:
             self.tdr_result_label.setText("")
             logger.info("Cannot compute cable length at 0 span")
@@ -142,10 +143,16 @@ class TDRWindow(QtWidgets.QWidget):
 
         windowed_s11 = window * s11
         self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+        index_peak = np.argmax(self.td)
+
         step = np.ones(FFT_POINTS)
         self.step_response = signal.convolve(self.td, step)
+        self.td = self.step_response
+        rho = (1 + self.step_response) / (1 - self.step_response)
+        self.step_response_Z = Zo * rho
 
-        self.step_response_Z = 50 * (1 + self.step_response) / (1 - self.step_response)
+        # self.step_response_Z = self.step_response
+        # self.step_response_Z = self.td
 
         time_axis = np.linspace(0, 1/step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * c
@@ -155,10 +162,10 @@ class TDRWindow(QtWidgets.QWidget):
 
         cable_len = round(self.distance_axis[index_peak]/2, 3)
         cable_time = round(time_axis[index_peak]*1e12/2, 1)
-        feet = math.floor(cable_len / 0.3048) # meters/feet
+        feet = math.floor(cable_len / 0.3048)               # meters/feet
         inches = round(((cable_len / 0.3048) - feet)*12, 1)
 
-        self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in)")
-#        self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in) (delay={cable_time}ps)")
+#        self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in)")
+        self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in) (delay={cable_time}ps)")
         self.app.tdr_result_label.setText(str(cable_len) + " m")
         self.updated.emit()
